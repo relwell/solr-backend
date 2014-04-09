@@ -108,6 +108,8 @@ def main():
                         shutil.move(filename, filename.replace(folder, u"failures"))
                     async_files[filename] = {u'result': async_result, u'start_time': start_time}
 
+        time.sleep(15)
+
 
 if __name__ == u'__main__':
     main()
