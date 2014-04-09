@@ -77,11 +77,10 @@ def monitor_async_files(pool, async_files):
     :type async_files: defaultdict
     :return: the async_files dict with any finished items removed
     """
-    for filename in async_files.keys():
-            result_dict = async_files[filename]
+    for filename, result_dict in async_files.items():
             result = result_dict[u'result']
-            start_time = result_dict[filename][u'start_time']
-            lines = result_dict[filename][u'lines']
+            start_time = result_dict[u'start_time']
+            lines = result_dict[u'lines']
             if result.ready():
                 if result.successful():
                     if result_dict[u'step'] == 1:

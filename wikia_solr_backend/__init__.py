@@ -74,7 +74,7 @@ def page_solr_extract_transform(namespace):
     except ValueError:
         extras_dict = vars(namespace)
         extras_dict[u'application_response'] = app_response.content
-        get_logger().error(u"Could not decode application JSON", extra=extras_dict)
+        get_logger().error(u"Could not decode application JSON for %s" % app_response.url, extra=extras_dict)
         return
 
     docs = response_json.get(u'contents', [])
