@@ -81,7 +81,12 @@ def main():
                     os.remove(filename)
                     get_logger().debug(u'Finished %s in %.2f seconds' % (filename, time.time() - start_time))
                 else:
-                    get_logger().error(u'%s: something was not succesful' % filename)
+                    err = None
+                    try:
+                        result.get()
+                    except Exception as e:
+                        err = e
+                    get_logger().error(u'%s: something was not succesful: %s' % (filename, err))
                     shutil.move(filename, filename.replace(folder, u"failures"))
                 del async_files[filename]
 
