@@ -60,8 +60,6 @@ def attach_to_file(namespace):
         return None
 
 
-
-
 def main():
     """ Main script method -- poll folders and spawn workers  """
     args = get_args()
@@ -92,8 +90,6 @@ def main():
                 async_result = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
                 if not async_result:
                     shutil.move(filename, filename.replace(folder, u"failures"))
-
-
 
 
 if __name__ == u'__main__':
