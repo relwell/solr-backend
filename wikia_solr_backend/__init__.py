@@ -20,6 +20,12 @@ def get_logger():
     if not logger:
         logger = logging.getLogger(u'solr_backend')
         logger.setLevel(logging.WARN)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(u'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
         #logger = wl.Logger.get(level=logging.WARN)
     return logger
 
