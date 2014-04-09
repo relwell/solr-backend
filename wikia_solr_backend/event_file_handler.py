@@ -34,6 +34,9 @@ def attach_to_file(namespace):
      :rtype :class:`multiprocessing.pool.AsyncResult`
     """
 
+    pool = namespace.pool
+    namespace.pool = None  # can't pickle it like the rest of the namespace
+
     host_hash = defaultdict(list)
     with open(namespace.filename, u'r') as fl:
         for line_number, line in enumerate(fl):
@@ -54,7 +57,7 @@ def attach_to_file(namespace):
 
     events_by_host_and_slice = [Namespace(**vars(namespace))]
     try:
-        return namespace.pool.map_async(page_solr_etl, events_by_host_and_slice)
+        return pool.map_async(page_solr_etl, events_by_host_and_slice)
     except Exception as e:
         get_logger().error(e)
         return None
