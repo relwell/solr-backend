@@ -55,7 +55,9 @@ def attach_to_file(namespace):
         get_logger().error(u"No events found in %s" % namespace.filename)
         return None
 
-    events_by_host_and_slice = [Namespace(**vars(namespace))]
+    events_by_host_and_slice = [Namespace(host=host, ids=host_hash[host][i:i+15], **vars(namespace))
+                                for host in host_hash
+                                for i in range(0, len(host_hash[host]), 15)]
     try:
         return pool.map_async(page_solr_etl, events_by_host_and_slice)
     except Exception as e:

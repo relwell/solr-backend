@@ -84,7 +84,8 @@ def page_solr_etl(namespace):
         timestamp = datetime.datetime.utcnow().isoformat()+u'Z'
         map(lambda z: z.update({u'indexed': {u'set': timestamp}}), adds)
 
-    send_solr_updates(namespace.solr_update_url, adds + deletes)   # we originally split these out
+    return send_solr_updates(namespace.solr_update_url, adds + deletes)   # we originally split these out
+
 
 
 def send_solr_updates(solr_update_url, data):
