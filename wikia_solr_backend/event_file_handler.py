@@ -37,6 +37,8 @@ def attach_to_file(namespace):
     pool = namespace.pool
     namespace.pool = None  # can't pickle it like the rest of the namespace
 
+    start_time = time.time()
+
     host_hash = defaultdict(list)
     with open(namespace.filename, u'r') as fl:
         for line_number, line in enumerate(fl):
@@ -59,7 +61,8 @@ def attach_to_file(namespace):
                                 for host in host_hash
                                 for i in range(0, len(host_hash[host]), 15)]
     try:
-        return pool.map_async(page_solr_etl, events_by_host_and_slice)
+        async_result = pool.map_async(page_solr_etl, events_by_host_and_slice)
+        return {u'result': async_result, u'start_time': start_time, u'lines': line_number}
     except Exception as e:
         get_logger().error(e)
         return None
@@ -78,10 +81,12 @@ def main():
         for filename in async_files.keys():
             result = async_files[filename][u'result']
             start_time = async_files[filename][u'start_time']
+            lines = async_files[filename][u'lines']
             if result.ready():
                 if result.successful():
                     os.remove(filename)
-                    get_logger().debug(u'Finished %s in %.2f seconds' % (filename, time.time() - start_time))
+                    get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
+                                       (filename, time.time() - start_time, lines))
                 else:
                     err = None
                     try:
@@ -100,13 +105,13 @@ def main():
                 for fl in files:
                     if len(async_files) >= 10:
                         break
-                    start_time = time.time()
+
                     filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
                     get_logger().debug(u'Attaching to %s' % filename)
-                    async_result = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
-                    if not async_result:
+                    async_result_dict = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
+                    if not async_result_dict:
                         shutil.move(filename, filename.replace(folder, u"failures"))
-                    async_files[filename] = {u'result': async_result, u'start_time': start_time}
+                    async_files[filename] = async_result_dict
 
         time.sleep(15)
 
