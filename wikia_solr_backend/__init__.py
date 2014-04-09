@@ -18,7 +18,9 @@ def get_logger():
     """
     global logger
     if not logger:
-        logger = wl.Logger.get(level=logging.WARN)
+        logger = logging.getLogger(u'solr_backend')
+        logger.setLevel(logging.WARN)
+        #logger = wl.Logger.get(level=logging.WARN)
     return logger
 
 
