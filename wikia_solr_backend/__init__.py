@@ -55,7 +55,7 @@ def page_solr_etl(namespace):
     params = dict(controller=u"WikiaSearchIndexer",
                   method=u"get",
                   service=namespace.index_service,
-                  ids=u"|".join(namespace.ids))
+                  ids=u"|".join(map(str, namespace.ids)))
 
     try:
         app_response = requests.get(u'%s/wikia.php' % namespace.host,
