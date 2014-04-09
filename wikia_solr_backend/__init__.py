@@ -19,7 +19,7 @@ def get_logger():
     global logger
     if not logger:
         logger = logging.getLogger(u'solr_backend')
-        logger.setLevel(logging.WARN)
+        logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter(u'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
