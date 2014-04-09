@@ -87,7 +87,7 @@ def monitor_async_files(pool, async_files):
                     if result_output and result_dict[u'step'] == 1:
                         result_data = [item for grouping in result_output if grouping for item in grouping if item]
                         get_logger().debug(u"Sending %d updates to load step" % len(result_data))
-                        result_dict[u'result'] = pool.apply_async(page_solr_load, result_data)
+                        result_dict[u'result'] = pool.apply_async(page_solr_load, (result_data,))
                         result_dict[u'step'] = 2
                     else:
                         os.remove(filename)
