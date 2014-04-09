@@ -97,6 +97,9 @@ def page_solr_load(solr_update_url, dataset):
     :return: True or False, depending on success
     :rtype: bool
     """
+    print "hello"
+    print solr_update_url
+    print dataset
     for data in [dataset[i:i+250] for i in range(0, len(dataset), 250)]:
         try:
             solr_response = requests.post(solr_update_url, data=json.dumps(data),
