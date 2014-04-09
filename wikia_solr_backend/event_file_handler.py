@@ -97,13 +97,13 @@ def main():
                     shutil.move(filename, filename.replace(folder, u"failures"))
                 del async_files[filename]
 
-        if len(async_files) < 10:
+        if len(async_files) < args.num_processes:
             for folder in ordered_existing_dirs:
-                if len(async_files) >= 10:
+                if len(async_files) >= args.num_processes:
                         break
                 files = os.listdir(args.event_folder_root + u'/' + folder)
                 for fl in files:
-                    if len(async_files) >= 10:
+                    if len(async_files) >= args.num_processes:
                         break
 
                     filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
