@@ -87,9 +87,8 @@ def monitor_async_files(pool, async_files):
                     if result_output and result_dict[u'step'] == 1:
                         print result_output
                         result_dict[u'result'] = pool.apply_async(page_solr_load,
-                                                                  [item for grouping in result_output
-                                                                   for item in grouping
-                                                                   if grouping and item])
+                                                                  [item for grouping in result_output if grouping
+                                                                   for item in grouping if item])
                         result_dict[u'step'] = 2
                     else:
                         os.remove(filename)
