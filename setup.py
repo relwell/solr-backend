@@ -11,6 +11,6 @@ setup(
     author_email=u'robert@wikia-inc.com',
     description=u'Wikia Deploy Tools',
     license=u'Other',
-    install_requires=[u"requests", u"wikiautils"],
-    packages=[u'wikia_solr_backend'],
+    install_requires=[u"requests", u"wikiautils", u"argparse"],
+    packages=[],
 )
