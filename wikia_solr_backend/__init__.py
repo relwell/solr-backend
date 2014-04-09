@@ -86,7 +86,7 @@ def page_solr_extract_transform(namespace):
         timestamp = datetime.datetime.utcnow().isoformat()+u'Z'
         map(lambda z: z.update({u'indexed': {u'set': timestamp}}), adds)
 
-    return adds + deletes
+    return {u'adds': adds, u'deletes': [{u'id': doc[u'id']} for doc in deletes]}
 
 
 def page_solr_load(solr_update_url, dataset):
@@ -99,8 +99,6 @@ def page_solr_load(solr_update_url, dataset):
     :return: True or False, depending on success
     :rtype: bool
     """
-    print "hello"
-    print solr_update_url
     for data in [dataset[i:i+250] for i in range(0, len(dataset), 250)]:
         try:
             solr_response = requests.post(solr_update_url, data=json.dumps(data),
