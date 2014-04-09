@@ -43,7 +43,7 @@ def default_args(ap):
     return ap
 
 
-def page_solr_etl(namespace):
+def page_solr_extract_transform(namespace):
     """ Extracts data from the appropriate IndexService, pushes it to Solr.
     :param namespace: A namespace instance from argparse with host and ids pushed into it
     :type namespace:class:`argparse.namespace`
@@ -84,11 +84,10 @@ def page_solr_etl(namespace):
         timestamp = datetime.datetime.utcnow().isoformat()+u'Z'
         map(lambda z: z.update({u'indexed': {u'set': timestamp}}), adds)
 
-    return send_solr_updates(namespace.solr_update_url, adds + deletes)   # we originally split these out
+    return adds + deletes
 
 
-
-def send_solr_updates(solr_update_url, data):
+def page_solr_load(solr_update_url, data):
     """
     Wraps posting with all the logging we want
     :param solr_update_url: the update url for solr
@@ -102,13 +101,13 @@ def send_solr_updates(solr_update_url, data):
         solr_response = requests.post(solr_update_url, data=json.dumps(data),
                                       headers={u'Content-type': u'application/json'})
     except requests.exceptions.ConnectionError as e:
-        get_logger().error(u"Could not connect to %s" % solr_update_url, extras={u'exception': e})
+        get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
         return False
 
     if solr_response.status_code != 200:
         extras_dict = vars(solr_response)
         extras_dict[u'data'] = data
-        get_logger().error(u"Status code for update on %s was not 200" % solr_update_url, extras=extras_dict)
+        get_logger().error(u"Status code for update on %s was not 200" % solr_update_url, extra=extras_dict)
         return False
 
     return True

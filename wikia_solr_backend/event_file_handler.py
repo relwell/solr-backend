@@ -6,7 +6,7 @@ import os
 import time
 import json
 import shutil
-from . import default_args, get_logger, page_solr_etl
+from . import default_args, get_logger, page_solr_extract_transform, page_solr_load
 from collections import defaultdict
 from multiprocessing import Pool
 from argparse import ArgumentParser, Namespace
@@ -62,10 +62,45 @@ def attach_to_file(namespace):
                                 for i in range(0, len(host_hash[host]), 15)]
     try:
         async_result = pool.map_async(page_solr_etl, events_by_host_and_slice)
-        return {u'result': async_result, u'start_time': start_time, u'lines': line_number}
+        return {u'result': async_result, u'start_time': start_time, u'lines': line_number, u'step': 1}
     except Exception as e:
         get_logger().error(e)
         return None
+
+
+def monitor_async_files(pool, async_files):
+    """
+    Pushes async result instances in a defaultdict through ETL process
+    :param pool: mp pool
+    :type pool:class:`multiprocessing.pool.Pool`
+    :param async_files: default dict keying file names to dictionaries holding data about an async result
+    :type async_files: defaultdict
+    :return: the async_files dict with any finished items removed
+    """
+    for filename in async_files.keys():
+            result_dict = async_files[filename]
+            result = result_dict[u'result']
+            start_time = result_dict[filename][u'start_time']
+            lines = result_dict[filename][u'lines']
+            if result.ready():
+                if result.successful():
+                    if result_dict[u'step'] == 1:
+                        result_dict[u'result'] = pool.apply_async(page_solr_load, [item for grouping in result.get()
+                                                                                   for item in grouping])
+                        result_dict[u'step'] = 2
+                    else:
+                        os.remove(filename)
+                        get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
+                                           (filename, time.time() - start_time, lines))
+                else:
+                    err = None
+                    try:
+                        result.get()
+                    except Exception as e:
+                        err = e
+                    get_logger().error(u'%s: something was not succesful: %s' % (filename, err))
+                    shutil.move(filename, filename.replace(folder, u"failures"))
+                del async_files[filename]
 
 
 def main():
@@ -78,24 +113,7 @@ def main():
     ordered_existing_dirs = prioritized_dirs + remaining_dirs
     async_files = {}
     while True:
-        for filename in async_files.keys():
-            result = async_files[filename][u'result']
-            start_time = async_files[filename][u'start_time']
-            lines = async_files[filename][u'lines']
-            if result.ready():
-                if result.successful():
-                    os.remove(filename)
-                    get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
-                                       (filename, time.time() - start_time, lines))
-                else:
-                    err = None
-                    try:
-                        result.get()
-                    except Exception as e:
-                        err = e
-                    get_logger().error(u'%s: something was not succesful: %s' % (filename, err))
-                    shutil.move(filename, filename.replace(folder, u"failures"))
-                del async_files[filename]
+        async_files = monitor_async_files(pool, async_files)
 
         if len(async_files) < args.num_processes:
             for folder in ordered_existing_dirs:
