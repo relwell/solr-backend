@@ -61,7 +61,7 @@ def attach_to_file(namespace):
                                 for host in host_hash
                                 for i in range(0, len(host_hash[host]), 15)]
     try:
-        async_result = pool.map_async(page_solr_etl, events_by_host_and_slice)
+        async_result = pool.map_async(page_solr_extract_transform, events_by_host_and_slice)
         return {u'result': async_result, u'start_time': start_time, u'lines': line_number, u'step': 1}
     except Exception as e:
         get_logger().error(e)
