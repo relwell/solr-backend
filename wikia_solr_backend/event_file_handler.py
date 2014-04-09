@@ -99,8 +99,11 @@ def monitor_async_files(pool, async_files):
                     except Exception as e:
                         err = e
                     get_logger().error(u'%s: something was not succesful: %s' % (filename, err))
-                    shutil.move(filename, filename.replace(folder, u"failures"))
+                    splt = filename.split(u'/')
+                    splt[-2] = u'failures'
+                    shutil.move(filename, u"/".join(splt))
                 del async_files[filename]
+    return async_files
 
 
 def main():
