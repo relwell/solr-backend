@@ -87,28 +87,29 @@ def page_solr_extract_transform(namespace):
     return adds + deletes
 
 
-def page_solr_load(solr_update_url, data):
+def page_solr_load(solr_update_url, dataset):
     """
     Wraps posting with all the logging we want
     :param solr_update_url: the update url for solr
     :type solr_update_url: str
-    :param data: a list of update dicts
-    :type data: list
+    :param dataset: a list of update dicts
+    :type dataset: list
     :return: True or False, depending on success
     :rtype: bool
     """
-    try:
-        solr_response = requests.post(solr_update_url, data=json.dumps(data),
-                                      headers={u'Content-type': u'application/json'})
-    except requests.exceptions.ConnectionError as e:
-        get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
-        return False
+    for data in [dataset[i:i+250] for i in range(0, len(dataset), 250)]:
+        try:
+            solr_response = requests.post(solr_update_url, data=json.dumps(data),
+                                          headers={u'Content-type': u'application/json'})
+        except requests.exceptions.ConnectionError as e:
+            get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
+            continue
 
-    if solr_response.status_code != 200:
-        extras_dict = vars(solr_response)
-        extras_dict[u'data'] = data
-        get_logger().error(u"Status code for update on %s was not 200" % solr_update_url, extra=extras_dict)
-        return False
+        if solr_response.status_code != 200:
+            extras_dict = vars(solr_response)
+            extras_dict[u'data'] = data
+            get_logger().error(u"Status code for update on %s was not 200" % solr_update_url, extra=extras_dict)
+            continue
 
     return True
 

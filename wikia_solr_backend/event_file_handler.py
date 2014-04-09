@@ -85,7 +85,6 @@ def monitor_async_files(pool, async_files):
                 if result.successful():
                     result_output = result.get()
                     if result_output and result_dict[u'step'] == 1:
-                        print result_output
                         result_dict[u'result'] = pool.apply_async(page_solr_load,
                                                                   [item for grouping in result_output if grouping
                                                                    for item in grouping if item])
@@ -94,6 +93,7 @@ def monitor_async_files(pool, async_files):
                         os.remove(filename)
                         get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
                                            (filename, time.time() - start_time, lines))
+                        del async_files[filename]
                 else:
                     err = None
                     try:
@@ -104,7 +104,7 @@ def monitor_async_files(pool, async_files):
                     splt = filename.split(u'/')
                     splt[-2] = u'failures'
                     shutil.move(filename, u"/".join(splt))
-                del async_files[filename]
+                    del async_files[filename]
     return async_files
 
 
