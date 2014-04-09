@@ -68,7 +68,7 @@ def attach_to_file(namespace):
         return None
 
 
-def monitor_async_files(pool, async_files):
+def monitor_async_files(pool, solr_update_url, async_files):
     """
     Pushes async result instances in a defaultdict through ETL process
     :param pool: mp pool
@@ -87,7 +87,7 @@ def monitor_async_files(pool, async_files):
                     if result_output and result_dict[u'step'] == 1:
                         result_data = [item for grouping in result_output if grouping for item in grouping if item]
                         get_logger().debug(u"Sending %d updates to load step" % len(result_data))
-                        result_dict[u'result'] = pool.apply_async(page_solr_load, (result_data,))
+                        result_dict[u'result'] = pool.apply_async(page_solr_load, (solr_update_url, result_data,))
                         result_dict[u'step'] = 2
                     else:
                         os.remove(filename)
@@ -118,7 +118,7 @@ def main():
     ordered_existing_dirs = prioritized_dirs + remaining_dirs
     async_files = {}
     while True:
-        async_files = monitor_async_files(pool, async_files)
+        async_files = monitor_async_files(pool, args.solr_update_url, async_files)
 
         if len(async_files) < args.num_processes:
             for folder in ordered_existing_dirs:
