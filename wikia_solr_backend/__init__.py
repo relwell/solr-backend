@@ -55,6 +55,7 @@ def page_solr_etl(namespace):
                                     params=params)
     except requests.exceptions.ConnectionError as e:
         get_logger().error(u"Connection error for %s" % namespace.host, extras={u'exception': e})
+        return
 
     if app_response.status_code != 200:
         extras_dict = dict(vars(app_response).items() + vars(namespace).items())
