@@ -73,7 +73,7 @@ def main():
     ordered_existing_dirs = prioritized_dirs + remaining_dirs
     async_files = {}
     while True:
-        for filename in async_files:
+        for filename in async_files.keys():
             result = async_files[filename][u'result']
             start_time = async_files[filename][u'start_time']
             if result.ready():
