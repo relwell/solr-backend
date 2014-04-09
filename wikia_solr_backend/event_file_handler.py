@@ -75,6 +75,7 @@ def main():
     while True:
         for filename in async_files:
             result = async_files[filename][u'result']
+            start_time = async_files[filename][u'result'][u'start_time']
             if result.ready():
                 if result.successful():
                     os.remove(filename)
@@ -98,7 +99,7 @@ def main():
                     async_result = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
                     if not async_result:
                         shutil.move(filename, filename.replace(folder, u"failures"))
-                    async_files[filename] = async_result
+                    async_files[filename] = {u'result': async_result, u'start_time': start_time}
 
 
 if __name__ == u'__main__':
