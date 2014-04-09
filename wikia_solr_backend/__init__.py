@@ -65,7 +65,9 @@ def page_solr_extract_transform(namespace):
         return
 
     if app_response.status_code != 200:
-        extras_dict = dict(vars(app_response).items() + vars(namespace).items())
+        extras_dict = vars(namespace).items()
+        extras_dict[u'response_content'] = app_response.content
+        extras_dict[u'response_status'] = app_response.status_code
         get_logger().error(u"Request to index service failed", extra=extras_dict)
         return
 
@@ -110,8 +112,8 @@ def page_solr_load(solr_update_url, dataset):
             continue
 
         if solr_response.status_code != 200:
-            extras_dict = vars(solr_response)
-            extras_dict[u'data'] = data
+            extras_dict = dict(data=data, response_content=solr_response.content,
+                               response_status=solr_response.status_code)
             get_logger().error(u"Status code for update on %s was not 200" % solr_update_url, extra=extras_dict)
             continue
 
