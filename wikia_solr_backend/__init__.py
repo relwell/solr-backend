@@ -86,7 +86,7 @@ def page_solr_extract_transform(namespace):
         timestamp = datetime.datetime.utcnow().isoformat()+u'Z'
         map(lambda z: z.update({u'indexed': {u'set': timestamp}}), adds)
 
-    return {u'adds': adds, u'deletes': [{u'id': doc[u'id']} for doc in deletes]}
+    return {u'adds': adds, u'deletes': [{u'id': doc[u'delete'][u'id']} for doc in deletes]}
 
 
 def page_solr_load(solr_update_url, dataset):
