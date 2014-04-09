@@ -85,8 +85,12 @@ def main():
                 del async_files[filename]
 
         for folder in ordered_existing_dirs:
+            if len(async_files) >= 10:
+                    break
             files = os.listdir(args.event_folder_root + u'/' + folder)
             for fl in files:
+                if len(async_files) >= 10:
+                    break
                 start_time = time.time()
                 filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
                 get_logger().debug(u'Attaching to %s' % filename)
