@@ -75,7 +75,7 @@ def main():
     while True:
         for filename in async_files:
             result = async_files[filename][u'result']
-            start_time = async_files[filename][u'result'][u'start_time']
+            start_time = async_files[filename][u'start_time']
             if result.ready():
                 if result.successful():
                     os.remove(filename)
