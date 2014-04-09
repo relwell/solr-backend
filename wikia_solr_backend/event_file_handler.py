@@ -43,7 +43,7 @@ def attach_to_file(namespace):
             try:
                 event = json.loads(line)
                 if u"pageId" not in event or u"serverName" not in event:
-                    get_logger().warn(u"Event in line number %d of %s is malformed: %s"
+                    get_logger().info(u"Event in line number %d of %s is malformed: %s"
                                       % (line_number, namespace.filename, line))
                     continue
                 host_hash[event[u"serverName"]].append(event[u"pageId"])
