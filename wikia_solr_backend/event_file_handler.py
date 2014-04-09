@@ -84,7 +84,7 @@ def main():
                     shutil.move(filename, filename.replace(folder, u"failures"))
                 del async_files[filename]
 
-        if len(async_files < 10):
+        if len(async_files) < 10:
             for folder in ordered_existing_dirs:
                 if len(async_files) >= 10:
                         break
