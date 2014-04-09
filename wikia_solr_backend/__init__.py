@@ -25,8 +25,7 @@ def get_logger():
         formatter = logging.Formatter(u'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         logger.addHandler(ch)
-
-        #logger = wl.Logger.get(level=logging.WARN)
+        wl.Logger.use(logger, logging.WARN)
     return logger
 
 
