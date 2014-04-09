@@ -84,19 +84,21 @@ def main():
                     shutil.move(filename, filename.replace(folder, u"failures"))
                 del async_files[filename]
 
-        for folder in ordered_existing_dirs:
-            if len(async_files) >= 10:
-                    break
-            files = os.listdir(args.event_folder_root + u'/' + folder)
-            for fl in files:
+        if len(async_files < 10):
+            for folder in ordered_existing_dirs:
                 if len(async_files) >= 10:
-                    break
-                start_time = time.time()
-                filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
-                get_logger().debug(u'Attaching to %s' % filename)
-                async_result = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
-                if not async_result:
-                    shutil.move(filename, filename.replace(folder, u"failures"))
+                        break
+                files = os.listdir(args.event_folder_root + u'/' + folder)
+                for fl in files:
+                    if len(async_files) >= 10:
+                        break
+                    start_time = time.time()
+                    filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
+                    get_logger().debug(u'Attaching to %s' % filename)
+                    async_result = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
+                    if not async_result:
+                        shutil.move(filename, filename.replace(folder, u"failures"))
+                    async_files[filename] = async_result
 
 
 if __name__ == u'__main__':
