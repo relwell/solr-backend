@@ -78,7 +78,7 @@ def main():
             if result.ready():
                 if result.successful():
                     os.remove(filename)
-                    get_logger().info(u'Finished %s in %.2f seconds' % (filename, time.time() - start_time))
+                    get_logger().debug(u'Finished %s in %.2f seconds' % (filename, time.time() - start_time))
                 else:
                     get_logger().error(u'%s: something was not succesful' % filename)
                     shutil.move(filename, filename.replace(folder, u"failures"))
@@ -89,7 +89,7 @@ def main():
             for fl in files:
                 start_time = time.time()
                 filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
-                get_logger().info(u'Attaching to %s' % filename)
+                get_logger().debug(u'Attaching to %s' % filename)
                 async_result = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
                 if not async_result:
                     shutil.move(filename, filename.replace(folder, u"failures"))
