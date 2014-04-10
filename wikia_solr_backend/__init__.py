@@ -99,12 +99,10 @@ def page_solr_add(solr_update_url, dataset):
     :return: True or False, depending on success
     :rtype: bool
     """
-    for data in [dataset[i:i+1] for i in range(0, len(dataset), 1)]:
+    for data in [dataset[i:i+250] for i in range(0, len(dataset), 250)]:
         try:
-            print json.dumps(data)
             solr_response = requests.post(solr_update_url, data=json.dumps(data),
                                           headers={u'Content-type': u'application/json'})
-            return
             get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
         except requests.exceptions.ConnectionError as e:
             get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
