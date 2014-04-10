@@ -142,6 +142,7 @@ def main():
         async_files = monitor_async_files(args.solr_update_url, async_files)
 
         in_progress_files = filter(lambda z: z, async_files.values())
+        print in_progress_files
         if len(in_progress_files) < args.num_pools:
             for folder in ordered_existing_dirs:
                 if len(in_progress_files) >= args.num_pools:
