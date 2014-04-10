@@ -110,7 +110,10 @@ def monitor_async_files(solr_update_url, async_files):
                 if result.successful():
                     result_output = result.get()
                     handle_grouped_adds_and_deletes(solr_update_url, result_output)
-                    os.remove(filename)
+                    try:
+                        os.remove(filename)
+                    except OSError:
+                        pass  # couldn't find file? might have gotten a dupe
                     get_logger().info(u'Finished %s in %.2f seconds (%d lines)' %
                                       (filename, time.time() - start_time, lines))
                     async_files[pool] = None
@@ -148,6 +151,9 @@ def main():
                         break
                 files = os.listdir(args.event_folder_root + u'/' + folder)
                 for fl in files:
+                    if fl in [a[u'filename'] for a in async_files.values()]:
+                        # don't attach to an in-progress file
+                        continue
                     if len(in_progress_files) >= args.num_pools:
                         break
 
