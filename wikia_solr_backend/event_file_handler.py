@@ -39,8 +39,8 @@ def grouped_events_from_file(namespace):
             events = json.loads(u"[%s]" % u",".join(fl.readlines()))
             for line_number, event in enumerate(events):
                 if u"pageId" not in event or u"serverName" not in event:
-                    get_logger().info(u"Event in line number %d of %s is malformed: %s"
-                                      % (line_number, namespace.filename, json.dumps(event)))
+                    get_logger().debug(u"Event in line number %d of %s is malformed: %s"
+                                       % (line_number, namespace.filename, json.dumps(event)))
                     continue
                 host_hash[event[u"serverName"]].append(event[u"pageId"])
         except ValueError:
@@ -49,14 +49,14 @@ def grouped_events_from_file(namespace):
                 try:
                     event = json.loads(line)
                     if u"pageId" not in event or u"serverName" not in event:
-                        get_logger().info(u"Event in line number %d of %s is malformed: %s"
+                        get_logger().debug(u"Event in line number %d of %s is malformed: %s"
                                           % (line_number, namespace.filename, line))
                         continue
                     host_hash[event[u"serverName"]].append(event[u"pageId"])
                 except ValueError:
-                    get_logger().warn(u"Could not decode event in line number %d of %s"
-                                      % (line_number, namespace.filename),
-                                      extras={u'data': line})
+                    get_logger().debug(u"Could not decode event in line number %d of %s"
+                                       % (line_number, namespace.filename),
+                                       extras={u'data': line})
     return host_hash
 
 
@@ -108,8 +108,8 @@ def monitor_async_files(solr_update_url, async_files):
                     result_output = result.get()
                     handle_grouped_adds_and_deletes(solr_update_url, result_output)
                     os.remove(filename)
-                    get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
-                                       (filename, time.time() - start_time, lines))
+                    get_logger().info(u'Finished %s in %.2f seconds (%d lines)' %
+                                      (filename, time.time() - start_time, lines))
                     del async_files[filename]
                 else:
                     err = None
@@ -148,7 +148,7 @@ def main():
                         break
 
                     filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
-                    get_logger().debug(u'Attaching to %s' % filename)
+                    get_logger().info(u'Attaching to %s' % filename)
                     async_result_dict = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
                     if not async_result_dict:
                         shutil.move(filename, filename.replace(folder, u"failures"))

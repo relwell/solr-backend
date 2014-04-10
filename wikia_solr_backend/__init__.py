@@ -9,7 +9,7 @@ import json
 import datetime
 
 logger = None
-log_level = logging.WARN
+log_level = logging.INFO
 
 
 def get_logger():
@@ -57,7 +57,7 @@ def handle_grouped_adds_and_deletes(solr_update_url, result_output):
     result_output = filter(lambda x: x, result_output)  # remove nones
     adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
     deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
-    get_logger().debug(u"Sending %d adds and %d deletes" % (len(adds), len(deletes)))
+    get_logger().info(u"Sending %d adds and %d deletes" % (len(adds), len(deletes)))
     psa_result = page_solr_add(solr_update_url, adds)
     psd_result = page_solr_delete(solr_update_url, deletes)
     return psa_result and psd_result
