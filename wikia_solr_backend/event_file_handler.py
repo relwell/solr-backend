@@ -108,15 +108,11 @@ def monitor_async_files(pool, solr_update_url, async_files):
             if result.ready():
                 if result.successful():
                     result_output = result.get()
-                    if result_output and result_dict[u'step'] == 1:
-                        result_dict[u'result'] = pool.apply_async(handle_grouped_adds_and_deletes,
-                                                                  (solr_update_url, result_output,))
-                        result_dict[u'step'] = 2
-                    else:
-                        os.remove(filename)
-                        get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
-                                           (filename, time.time() - start_time, lines))
-                        del async_files[filename]
+                    handle_grouped_adds_and_deletes(solr_update_url, result_output)
+                    os.remove(filename)
+                    get_logger().debug(u'Finished %s in %.2f seconds (%d lines)' %
+                                       (filename, time.time() - start_time, lines))
+                    del async_files[filename]
                 else:
                     err = None
                     try:
