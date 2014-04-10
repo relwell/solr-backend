@@ -104,6 +104,7 @@ def page_solr_add(solr_update_url, dataset):
             print data
             solr_response = requests.post(solr_update_url, data=json.dumps(data),
                                           headers={u'Content-type': u'application/json'})
+            return
             get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
         except requests.exceptions.ConnectionError as e:
             get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
