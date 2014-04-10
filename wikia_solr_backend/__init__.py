@@ -55,10 +55,13 @@ def default_args(ap):
      :return: argparser
      :rtype :class:`argparse.ArgumentParser`
     """
-    ap.add_argument(u'--index-service', dest=u'index_service', default=u'All')
+    ap.add_argument(u'--index-service', dest=u'index_service', default=u'All',
+                    help=u"The index service to query from the application.")
     ap.add_argument(u'--solr-update-url', dest=u'solr_update_url',
-                    default=u'http://search-master:8983/solr/main/update/')
-    ap.add_argument(u'--dont-add-last-indexed', dest=u'add_last_indexed', default=True, action=u'store_false')
+                    default=u'http://search-master:8983/solr/main/update/',
+                    help=u"The URL you would access to send an update directive to the core in question")
+    ap.add_argument(u'--dont-add-last-indexed', dest=u'add_last_indexed', default=True, action=u'store_false',
+                    help=u"Use this flag if you don't want to update the indexed field with the current datestamp")
     return ap
 
 
