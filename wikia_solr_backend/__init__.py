@@ -6,11 +6,28 @@ import requests
 import logging
 import wikiautils.logger as wl
 import json
+import time
 import datetime
 import traceback
 
 logger = None
 log_level = logging.INFO
+
+
+class SolrHealthCheckError(Exception):
+    """
+    Throw if it healthcheck doesn't work.
+    """
+    def __init__(self, response=None):
+        """
+        Store a response to get info out of
+        :param response: a requests response
+        :type response:class:`requests.Response`
+        """
+        self.response = response
+
+    def __str__(self):
+        return u"Status Code %d: %s" % (self.response.status_code, self.response.content)
 
 
 def get_logger():
@@ -55,17 +72,36 @@ def handle_grouped_adds_and_deletes(solr_update_url, result_output):
     :return: whether add and delete worked
     :rtype: bool
     """
-    try:
-        result_output = filter(lambda x: x, result_output)  # remove nones
-        adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
-        deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
-        get_logger().info(u"Sending %d adds and %d deletes" % (len(adds), len(deletes)))
-        psa_result = page_solr_add(solr_update_url, adds)
-        psd_result = page_solr_delete(solr_update_url, deletes)
-        return psa_result and psd_result
-    except Exception as e:
-        get_logger().error(u"Error caught in handle_grouped_adds_and_deletes: %s: %s"
-                           % (str(e), traceback.format_exc()))
+
+    assume_healthy = True
+    waited = 0
+    while True:
+        try:
+            if not assume_healthy:
+                splt = solr_update_url.split(u'/')
+                splt[-2:] = [u'admin', u'ping']
+                healthcheck_response = requests.get(u'/'.join(splt), params=dict(wt=u'json'))
+                if healthcheck_response.status_code != 200:
+                    raise SolrHealthCheckError(healthcheck_response)
+                assume_healthy = healthcheck_response.json().get(u'responseHeader', {}).get(u'status', None) == 0
+
+            result_output = filter(lambda x: x, result_output)  # remove nones
+            adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
+            deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
+            get_logger().info(u"Sending %d adds and %d deletes" % (len(adds), len(deletes)))
+            psa_result = page_solr_add(solr_update_url, adds)
+            psd_result = page_solr_delete(solr_update_url, deletes)
+            return assume_healthy and psa_result and psd_result
+        except (requests.exceptions.ConnectionError, SolrHealthCheckError) as e:
+            get_logger().error(u"Could not connect to %s (%s). Blocking for 30 seconds (waited %d seconds so far)"
+                               % (solr_update_url, e, waited))
+            time.sleep(30)
+            waited += 30
+            assume_healthy = False
+        except Exception as e:
+            get_logger().error(u"Error caught in handle_grouped_adds_and_deletes: %s: %s"
+                               % (str(e), traceback.format_exc()))
+            return False
 
 
 def page_solr_extract_transform(namespace):
@@ -102,9 +138,11 @@ def page_solr_extract_transform(namespace):
         try:
             response_json = app_response.json()
         except ValueError:
-            extras_dict = vars(namespace)
-            extras_dict[u'application_response'] = app_response.content
-            get_logger().error(u"Could not decode application JSON for %s" % app_response.url, extra=extras_dict)
+            if app_response.url != u"http://community.wikia.com/wiki/Community_Central:Not_a_valid_Wikia":
+                extras_dict = vars(namespace)
+                extras_dict[u'application_response'] = app_response.content
+                get_logger().error(u"Could not decode application JSON for %s" % app_response.url, extra=extras_dict)
+            # todo: maybe add some logic to make sure this url is not in the cross-wiki index?
             return
 
         docs = response_json.get(u'contents', [])
@@ -131,13 +169,9 @@ def page_solr_add(solr_update_url, dataset):
     :rtype: bool
     """
     for data in [dataset[i:i+250] for i in range(0, len(dataset), 250)]:
-        try:
-            solr_response = requests.post(solr_update_url, data=json.dumps(data),
-                                          headers={u'Content-type': u'application/json'})
-            get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
-        except requests.exceptions.ConnectionError as e:
-            get_logger().error(u"Could not connect to %s: %s %s" % (solr_update_url, str(e), traceback.format_exc()))
-            continue
+        solr_response = requests.post(solr_update_url, data=json.dumps(data),
+                                      headers={u'Content-type': u'application/json'})
+        get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
 
         if solr_response.status_code != 200:
             extras_dict = dict(data=data, response_content=solr_response.content,
@@ -158,13 +192,9 @@ def page_solr_delete(solr_update_url, data):
     :return: True or False, depending on success
     :rtype: bool
     """
-    try:
-        solr_response = requests.post(solr_update_url, data=json.dumps(data),
-                                      headers={u'Content-type': u'application/json'})
-        get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
-    except requests.exceptions.ConnectionError as e:
-        get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
-        return False
+    solr_response = requests.post(solr_update_url, data=json.dumps(data),
+                                  headers={u'Content-type': u'application/json'})
+    get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
 
     if solr_response.status_code != 200:
         extras_dict = dict(data=data, response_content=solr_response.content,
