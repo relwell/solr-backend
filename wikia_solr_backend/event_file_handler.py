@@ -23,6 +23,7 @@ def get_args():
     ap.add_argument(u'--folder-ordering', dest=u'folder_ordering', default=u'events,retries,bulk')
     ap.add_argument(u'--num-processes', dest=u'num_processes', default=3, type=int)
     ap.add_argument(u'--num-pools', dest=u'num_pools', default=4, type=int)
+    ap.add_argument(u'--ids-slice-size', dest=u'ids_slice_size', default=10)
     return ap.parse_args()
 
 
@@ -82,9 +83,10 @@ def attach_to_file(namespace):
         get_logger().error(u"No events found in %s" % namespace.filename)
         return None
 
-    events_by_host_and_slice = [Namespace(host=host, ids=host_hash[host][i:i+15], **vars(namespace))
+    events_by_host_and_slice = [Namespace(host=host, ids=host_hash[host][i:i+namespace.ids_slice_size],
+                                          **vars(namespace))
                                 for host in host_hash
-                                for i in range(0, len(host_hash[host]), 15)]
+                                for i in range(0, len(host_hash[host]), namespace.ids_slice_size)]
     try:
         async_result = pool.map_async(page_solr_extract_transform, events_by_host_and_slice)
         return {u'result': async_result, u'start_time': start_time, u'lines': line_count,
