@@ -21,7 +21,8 @@ def get_args():
     ap = default_args(ArgumentParser(u"Handles indexing using event files"))
     ap.add_argument(u'--event-folder-root', dest=u'event_folder_root', default=u'/var/spool/scribe/')
     ap.add_argument(u'--folder-ordering', dest=u'folder_ordering', default=u'events,retries,bulk')
-    ap.add_argument(u'--num-processes', dest=u'num_processes', default=6, type=int)
+    ap.add_argument(u'--num-processes', dest=u'num_processes', default=3, type=int)
+    ap.add_argument(u'--num-pools', dest=u'num_pools', default=4, type=int)
     return ap.parse_args()
 
 
@@ -86,7 +87,8 @@ def attach_to_file(namespace):
                                 for i in range(0, len(host_hash[host]), 15)]
     try:
         async_result = pool.map_async(page_solr_extract_transform, events_by_host_and_slice)
-        return {u'result': async_result, u'start_time': start_time, u'lines': line_count, u'step': 1}
+        return {u'result': async_result, u'start_time': start_time, u'lines': line_count,
+                u'step': 1, u'filename': namespace.filename}
     except Exception as e:
         get_logger().error(e)
         return None
@@ -99,10 +101,11 @@ def monitor_async_files(solr_update_url, async_files):
     :type async_files: defaultdict
     :return: the async_files dict with any finished items removed
     """
-    for filename, result_dict in async_files.items():
+    for pool, result_dict in async_files.items():
             result = result_dict[u'result']
             start_time = result_dict[u'start_time']
             lines = result_dict[u'lines']
+            filename = result_dict[u'filename']
             if result.ready():
                 if result.successful():
                     result_output = result.get()
@@ -110,7 +113,7 @@ def monitor_async_files(solr_update_url, async_files):
                     os.remove(filename)
                     get_logger().info(u'Finished %s in %.2f seconds (%d lines)' %
                                       (filename, time.time() - start_time, lines))
-                    del async_files[filename]
+                    async_files[pool] = None
                 else:
                     err = None
                     try:
@@ -121,38 +124,40 @@ def monitor_async_files(solr_update_url, async_files):
                     splt = filename.split(u'/')
                     splt[-2] = u'failures'
                     shutil.move(filename, u"/".join(splt))
-                    del async_files[filename]
+                    async_files[pool] = None
     return async_files
 
 
 def main():
     """ Main script method -- poll folders and spawn workers  """
     args = get_args()
-    pool = Pool(processes=args.num_processes)
+    pools = [Pool(processes=args.num_processes) for _ in range(0, args.num_pools)]
     dirs = os.listdir(args.event_folder_root)
     prioritized_dirs = [x for x in args.folder_ordering.split(u',') if x in dirs]
     remaining_dirs = [x for x in dirs if x not in prioritized_dirs and x != u'failures']
     ordered_existing_dirs = prioritized_dirs + remaining_dirs
-    async_files = {}
-    files_at_once = int(args.num_processes / 4)  # more processes per file
+    async_files = dict([(pool, None) for pool in pools])
+
     while True:
         async_files = monitor_async_files(args.solr_update_url, async_files)
 
-        if len(async_files) < files_at_once:
+        in_progress_files = filter(async_files.values())
+        if len(in_progress_files) < args.num_pools:
             for folder in ordered_existing_dirs:
-                if len(async_files) >= files_at_once:
+                if len(in_progress_files) >= args.num_pools:
                         break
                 files = os.listdir(args.event_folder_root + u'/' + folder)
                 for fl in files:
-                    if len(async_files) >= files_at_once:
+                    if len(async_files) >= args.num_pools:
                         break
 
+                    pool = [pool for pool, attached in async_files.items() if not attached][0]
                     filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
                     get_logger().info(u'Attaching to %s' % filename)
                     async_result_dict = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
                     if not async_result_dict:
                         shutil.move(filename, filename.replace(folder, u"failures"))
-                    async_files[filename] = async_result_dict
+                    async_files[pool] = async_result_dict
 
         time.sleep(5)
 
