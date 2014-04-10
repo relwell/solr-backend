@@ -158,7 +158,7 @@ def main():
                     if not async_result_dict:
                         shutil.move(filename, filename.replace(folder, u"failures"))
                     async_files[pool] = async_result_dict
-                    in_progress_files += 1
+                    in_progress_files = filter(lambda z: z, async_files.values())
 
         time.sleep(5)
 
