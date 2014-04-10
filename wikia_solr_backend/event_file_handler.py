@@ -92,11 +92,9 @@ def attach_to_file(namespace):
         return None
 
 
-def monitor_async_files(pool, solr_update_url, async_files):
+def monitor_async_files(solr_update_url, async_files):
     """
     Pushes async result instances in a defaultdict through ETL process
-    :param pool: mp pool
-    :type pool:class:`multiprocessing.pool.Pool`
     :param async_files: default dict keying file names to dictionaries holding data about an async result
     :type async_files: defaultdict
     :return: the async_files dict with any finished items removed
@@ -136,16 +134,17 @@ def main():
     remaining_dirs = [x for x in dirs if x not in prioritized_dirs and x != u'failures']
     ordered_existing_dirs = prioritized_dirs + remaining_dirs
     async_files = {}
+    files_at_once = int(args.num_processes / 4)  # more processes per file
     while True:
-        async_files = monitor_async_files(pool, args.solr_update_url, async_files)
+        async_files = monitor_async_files(args.solr_update_url, async_files)
 
-        if len(async_files) < args.num_processes:
+        if len(async_files) < files_at_once:
             for folder in ordered_existing_dirs:
-                if len(async_files) >= args.num_processes:
+                if len(async_files) >= files_at_once:
                         break
                 files = os.listdir(args.event_folder_root + u'/' + folder)
                 for fl in files:
-                    if len(async_files) >= args.num_processes:
+                    if len(async_files) >= files_at_once:
                         break
 
                     filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)

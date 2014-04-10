@@ -9,6 +9,7 @@ import json
 import datetime
 
 logger = None
+log_level = logging.WARN
 
 
 def get_logger():
@@ -16,16 +17,16 @@ def get_logger():
     :rtype :class:`logging.logger`
     :return: logger
     """
-    global logger
+    global logger, log_level
     if not logger:
         logger = logging.getLogger(u'solr_backend')
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(log_level)
         ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(log_level)
         formatter = logging.Formatter(u'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         logger.addHandler(ch)
-        wl.Logger.use(logger, logging.WARN)
+        wl.Logger.use(logger, log_level)
     return logger
 
 
