@@ -126,7 +126,10 @@ def monitor_async_files(solr_update_url, async_files):
                     get_logger().error(u'%s: something was not succesful: %s' % (filename, err))
                     splt = filename.split(u'/')
                     splt[-2] = u'failures'
-                    shutil.move(filename, u"/".join(splt))
+                    try:
+                        shutil.move(filename, u"/".join(splt))
+                    except IOError:
+                        pass  # file is missing?
                     async_files[pool] = None
     return async_files
 
