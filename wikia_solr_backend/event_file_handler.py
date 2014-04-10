@@ -142,14 +142,13 @@ def main():
         async_files = monitor_async_files(args.solr_update_url, async_files)
 
         in_progress_files = filter(lambda z: z, async_files.values())
-        print in_progress_files
         if len(in_progress_files) < args.num_pools:
             for folder in ordered_existing_dirs:
                 if len(in_progress_files) >= args.num_pools:
                         break
                 files = os.listdir(args.event_folder_root + u'/' + folder)
                 for fl in files:
-                    if len(async_files) >= args.num_pools:
+                    if len(in_progress_files) >= args.num_pools:
                         break
 
                     pool = [pool for pool, attached in async_files.items() if not attached][0]
