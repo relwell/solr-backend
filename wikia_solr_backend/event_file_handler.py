@@ -38,11 +38,11 @@ def grouped_events_from_file(namespace):
         try:
             events = json.loads(u"[%s]" % u",".join(fl.readlines()))
             for line_number, event in enumerate(events):
-                host_hash[event[u"serverName"]].append(event[u"pageId"])
                 if u"pageId" not in event or u"serverName" not in event:
-                        get_logger().info(u"Event in line number %d of %s is malformed: %s"
-                                          % (line_number, namespace.filename, json.dumps(event)))
-                        continue
+                    get_logger().info(u"Event in line number %d of %s is malformed: %s"
+                                      % (line_number, namespace.filename, json.dumps(event)))
+                    continue
+                host_hash[event[u"serverName"]].append(event[u"pageId"])
         except ValueError:
             get_logger().warn(u"Could not decode entire file: %s" % namespace.filename)
             for line_number, line in enumerate(fl):
