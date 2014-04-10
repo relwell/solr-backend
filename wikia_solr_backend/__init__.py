@@ -99,9 +99,9 @@ def page_solr_add(solr_update_url, dataset):
     :return: True or False, depending on success
     :rtype: bool
     """
-    for data in [dataset[i:i+5] for i in range(0, len(dataset), 5)]:
+    for data in [dataset[i:i+1] for i in range(0, len(dataset), 1)]:
         try:
-            print data
+            print json_dumps(data)
             solr_response = requests.post(solr_update_url, data=json.dumps(data),
                                           headers={u'Content-type': u'application/json'})
             return
