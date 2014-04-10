@@ -89,7 +89,7 @@ def page_solr_extract_transform(namespace):
     return {u'adds': adds, u'deletes': [{u'id': doc[u'delete'][u'id']} for doc in deletes]}
 
 
-def page_solr_load(solr_update_url, dataset):
+def page_solr_add(solr_update_url, dataset):
     """
     Wraps posting with all the logging we want
     :param solr_update_url: the update url for solr
@@ -117,5 +117,29 @@ def page_solr_load(solr_update_url, dataset):
     return True
 
 
+def page_solr_delete(solr_update_url, data):
+    """
+    Wraps posting with all the logging we want
+    :param solr_update_url: the update url for solr
+    :type solr_update_url: str
+    :param data: a dict with delete directives
+    :type data: dict
+    :return: True or False, depending on success
+    :rtype: bool
+    """
+    try:
+        solr_response = requests.post(solr_update_url, data=json.dumps(data),
+                                      headers={u'Content-type': u'application/json'})
+        get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
+    except requests.exceptions.ConnectionError as e:
+        get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
+        return False
 
+    if solr_response.status_code != 200:
+        extras_dict = dict(data=data, response_content=solr_response.content,
+                           response_status=solr_response.status_code)
+        get_logger().error(u"Status code for update on %s was not 200" % solr_update_url, extra=extras_dict)
+        return False
+
+    return True
 

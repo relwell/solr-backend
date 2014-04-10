@@ -6,7 +6,7 @@ import os
 import time
 import json
 import shutil
-from . import default_args, get_logger, page_solr_extract_transform, page_solr_load
+from . import default_args, get_logger, page_solr_extract_transform, page_solr_add, page_solr_delete
 from collections import defaultdict
 from multiprocessing import Pool
 from argparse import ArgumentParser, Namespace
@@ -115,9 +115,9 @@ def monitor_async_files(pool, solr_update_url, async_files):
                         deletes = []
                         map(deletes.append, filter(lambda x: x.get(u'deletes', []), result_output))
                         if adds:
-                            print page_solr_load(solr_update_url, adds)
+                            print page_solr_add(solr_update_url, adds)
                         if deletes:
-                            print page_solr_load(solr_update_url, deletes)
+                            print page_solr_delete(solr_update_url, deletes)
                         #result_dict[u'result'] = pool.apply_async(page_solr_load, (solr_update_url, result_data,))
                         print result_dict[u'result'].get()
                         result_dict[u'step'] = 2
