@@ -116,8 +116,8 @@ def monitor_async_files(pool, solr_update_url, async_files):
                         map(deletes.append, filter(lambda x: x.get(u'deletes', []), result_output))
                         if adds:
                             print page_solr_add(solr_update_url, adds)
-                        if deletes:
-                            print page_solr_delete(solr_update_url, deletes)
+                        #if deletes:
+                            #print page_solr_delete(solr_update_url, deletes)
                         #result_dict[u'result'] = pool.apply_async(page_solr_load, (solr_update_url, result_data,))
                         print result_dict[u'result'].get()
                         result_dict[u'step'] = 2
