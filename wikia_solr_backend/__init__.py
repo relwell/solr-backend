@@ -93,7 +93,7 @@ def page_solr_extract_transform(namespace):
             return
 
         if app_response.status_code != 200:
-            extras_dict = vars(namespace).items()
+            extras_dict = vars(namespace)
             extras_dict[u'response_content'] = app_response.content
             extras_dict[u'response_status'] = app_response.status_code
             get_logger().error(u"Request to index service failed", extra=extras_dict)
