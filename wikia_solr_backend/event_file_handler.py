@@ -151,7 +151,7 @@ def main():
                         break
                 files = os.listdir(args.event_folder_root + u'/' + folder)
                 for fl in files:
-                    if fl in [a[u'filename'] for a in async_files.values()]:
+                    if fl in [a[u'filename'] for a in in_progress_files]:
                         # don't attach to an in-progress file
                         continue
                     if len(in_progress_files) >= args.num_pools:
