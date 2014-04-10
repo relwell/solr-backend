@@ -64,8 +64,8 @@ def handle_grouped_adds_and_deletes(solr_update_url, result_output):
         psd_result = page_solr_delete(solr_update_url, deletes)
         return psa_result and psd_result
     except Exception as e:
-        print e
-        print traceback.format_exc()
+        get_logger().error(u"Error caught in handle_grouped_adds_and_deletes: %s: %s"
+                           % (str(e), traceback.format_exc()))
 
 
 def page_solr_extract_transform(namespace):
@@ -75,45 +75,49 @@ def page_solr_extract_transform(namespace):
     :return: add and delete dict
     :rtype: dict
     """
-    if not namespace.ids or not namespace.host:
-        get_logger().error(u"page_solr_etl invoked with ids or host missing", extra=vars(namespace))
-        return
-
-    params = dict(controller=u"WikiaSearchIndexer",
-                  method=u"get",
-                  service=namespace.index_service,
-                  ids=u"|".join(map(str, namespace.ids)))
-
     try:
-        app_response = requests.get(u'%s/wikia.php' % namespace.host,
-                                    params=params)
-    except requests.exceptions.ConnectionError as e:
-        get_logger().error(u"Connection error for %s" % namespace.host, extras={u'exception': e})
-        return
+        if not namespace.ids or not namespace.host:
+            get_logger().error(u"page_solr_etl invoked with ids or host missing", extra=vars(namespace))
+            return
 
-    if app_response.status_code != 200:
-        extras_dict = vars(namespace).items()
-        extras_dict[u'response_content'] = app_response.content
-        extras_dict[u'response_status'] = app_response.status_code
-        get_logger().error(u"Request to index service failed", extra=extras_dict)
-        return
+        params = dict(controller=u"WikiaSearchIndexer",
+                      method=u"get",
+                      service=namespace.index_service,
+                      ids=u"|".join(map(str, namespace.ids)))
 
-    try:
-        response_json = app_response.json()
-    except ValueError:
-        extras_dict = vars(namespace)
-        extras_dict[u'application_response'] = app_response.content
-        get_logger().error(u"Could not decode application JSON for %s" % app_response.url, extra=extras_dict)
-        return
+        try:
+            app_response = requests.get(u'%s/wikia.php' % namespace.host,
+                                        params=params)
+        except requests.exceptions.ConnectionError as e:
+            get_logger().error(u"Connection error for %s: %s: %s" % (namespace.host, str(e), traceback.format_exc()))
+            return
 
-    docs = response_json.get(u'contents', [])
-    deletes = filter(lambda x: u'delete' in x and u'id' in x[u'delete'], docs)
-    adds = filter(lambda y: y not in deletes, docs)
-    if namespace.add_last_indexed:
-        timestamp = datetime.datetime.utcnow().isoformat()+u'Z'
-        map(lambda z: z.update({u'indexed': {u'set': timestamp}}), adds)
+        if app_response.status_code != 200:
+            extras_dict = vars(namespace).items()
+            extras_dict[u'response_content'] = app_response.content
+            extras_dict[u'response_status'] = app_response.status_code
+            get_logger().error(u"Request to index service failed", extra=extras_dict)
+            return
 
-    return {u'adds': adds, u'deletes': [{u'id': doc[u'delete'][u'id']} for doc in deletes]}
+        try:
+            response_json = app_response.json()
+        except ValueError:
+            extras_dict = vars(namespace)
+            extras_dict[u'application_response'] = app_response.content
+            get_logger().error(u"Could not decode application JSON for %s" % app_response.url, extra=extras_dict)
+            return
+
+        docs = response_json.get(u'contents', [])
+        deletes = filter(lambda x: u'delete' in x and u'id' in x[u'delete'], docs)
+        adds = filter(lambda y: y not in deletes, docs)
+        if namespace.add_last_indexed:
+            timestamp = datetime.datetime.utcnow().isoformat()+u'Z'
+            map(lambda z: z.update({u'indexed': {u'set': timestamp}}), adds)
+
+        return {u'adds': adds, u'deletes': [{u'id': doc[u'delete'][u'id']} for doc in deletes]}
+    except Exception as e:
+        get_logger().error(u"Error caught in page_solr_extract_transform: %s: %s"
+                           % (str(e), traceback.format_exc()))
 
 
 def page_solr_add(solr_update_url, dataset):
@@ -132,7 +136,7 @@ def page_solr_add(solr_update_url, dataset):
                                           headers={u'Content-type': u'application/json'})
             get_logger().debug(u"Sent %d updates to to %s" % (len(data), solr_update_url))
         except requests.exceptions.ConnectionError as e:
-            get_logger().error(u"Could not connect to %s" % solr_update_url, extra={u'exception': e})
+            get_logger().error(u"Could not connect to %s: %s %s" % (solr_update_url, str(e), traceback.format_exc()))
             continue
 
         if solr_response.status_code != 200:
