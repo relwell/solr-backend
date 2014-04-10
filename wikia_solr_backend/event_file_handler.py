@@ -151,15 +151,14 @@ def main():
                     if len(in_progress_files) >= args.num_pools:
                         break
 
-                    available_pools = [pool for pool, attached in async_files.items() if not attached]
-                    print available_pools
-                    pool = available_pools[0]
+                    pool = [pool for pool, attached in async_files.items() if not attached][0]
                     filename = u'%s/%s/%s' % (args.event_folder_root, folder, fl)
                     get_logger().info(u'Attaching to %s' % filename)
                     async_result_dict = attach_to_file(Namespace(filename=filename, pool=pool, **vars(args)))
                     if not async_result_dict:
                         shutil.move(filename, filename.replace(folder, u"failures"))
                     async_files[pool] = async_result_dict
+                    in_progress_files += 1
 
         time.sleep(5)
 
