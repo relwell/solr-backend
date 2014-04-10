@@ -51,7 +51,7 @@ def grouped_events_from_file(namespace):
                     event = json.loads(line)
                     if u"pageId" not in event or u"serverName" not in event:
                         get_logger().debug(u"Event in line number %d of %s is malformed: %s"
-                                          % (line_number, namespace.filename, line))
+                                           % (line_number, namespace.filename, line))
                         continue
                     host_hash[event[u"serverName"]].append(event[u"pageId"])
                 except ValueError:

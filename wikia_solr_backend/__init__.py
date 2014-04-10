@@ -9,7 +9,7 @@ import json
 import datetime
 
 logger = None
-log_level = logging.INFO
+log_level = logging.DEBUG
 
 
 def get_logger():
