@@ -101,7 +101,7 @@ def monitor_async_files(solr_update_url, async_files):
     :type async_files: defaultdict
     :return: the async_files dict with any finished items removed
     """
-    for pool, result_dict in async_files.items():
+    for pool, result_dict in filter(lambda x: x[1], async_files.items()):
             result = result_dict[u'result']
             start_time = result_dict[u'start_time']
             lines = result_dict[u'lines']
