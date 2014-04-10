@@ -19,11 +19,18 @@ def get_args():
      :rtype: `argparse.Namespace`
     """
     ap = default_args(ArgumentParser(u"Handles indexing using event files"))
-    ap.add_argument(u'--event-folder-root', dest=u'event_folder_root', default=u'/var/spool/scribe/')
-    ap.add_argument(u'--folder-ordering', dest=u'folder_ordering', default=u'events,retries,bulk')
-    ap.add_argument(u'--num-processes', dest=u'num_processes', default=3, type=int)
-    ap.add_argument(u'--num-pools', dest=u'num_pools', default=4, type=int)
-    ap.add_argument(u'--ids-slice-size', dest=u'ids_slice_size', default=10)
+    ap.add_argument(u'--event-folder-root', dest=u'event_folder_root', default=u'/var/spool/scribe/',
+                    help=u"This is where the event system's folders start")
+    ap.add_argument(u'--folder-ordering', dest=u'folder_ordering', default=u'events,retries,bulk',
+                    help=u"Comma-separated list ordered in priority. " +
+                         u"Folders not mentioned here are appended at the end alphabetically")
+    ap.add_argument(u'--num-processes', dest=u'num_processes', default=15, type=int,
+                    help=u"Number of processes per pool for asynchronous index service requests")
+    ap.add_argument(u'--num-pools', dest=u'num_pools', default=15, type=int,
+                    help=u"Number of separately managed multiprocessing pools. " +
+                         u"This is the number of files worked on at once.")
+    ap.add_argument(u'--ids-slice-size', dest=u'ids_slice_size', default=10,
+                    help=u"Number of page IDs to request indexing data from the application at once.")
     return ap.parse_args()
 
 
