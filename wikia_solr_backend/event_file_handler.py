@@ -110,10 +110,8 @@ def monitor_async_files(pool, solr_update_url, async_files):
                     result_output = result.get()
                     if result_output and result_dict[u'step'] == 1:
                         result_output = filter(lambda x: x, result_output)  # remove nones
-                        adds = []
-                        map(adds.append, map(lambda x: x.get(u'adds', []), result_output))
-                        deletes = []
-                        map(deletes.append, map(lambda x: x.get(u'deletes', []), result_output))
+                        adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
+                        deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
                         if adds:
                             print page_solr_add(solr_update_url, adds)
                         #if deletes:
