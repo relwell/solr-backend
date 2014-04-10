@@ -6,7 +6,7 @@ import os
 import time
 import json
 import shutil
-from . import default_args, get_logger, page_solr_extract_transform, page_solr_add, page_solr_delete
+from . import default_args, get_logger, page_solr_extract_transform, handle_grouped_adds_and_deletes
 from collections import defaultdict
 from multiprocessing import Pool
 from argparse import ArgumentParser, Namespace
@@ -109,15 +109,8 @@ def monitor_async_files(pool, solr_update_url, async_files):
                 if result.successful():
                     result_output = result.get()
                     if result_output and result_dict[u'step'] == 1:
-                        result_output = filter(lambda x: x, result_output)  # remove nones
-                        adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
-                        deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
-                        if adds:
-                            print page_solr_add(solr_update_url, adds)
-                        #if deletes:
-                            #print page_solr_delete(solr_update_url, deletes)
-                        #result_dict[u'result'] = pool.apply_async(page_solr_load, (solr_update_url, result_data,))
-                        print result_dict[u'result'].get()
+                        result_dict[u'result'] = pool.apply_async(handle_grouped_adds_and_deletes,
+                                                                  (solr_update_url, result_output,))
                         result_dict[u'step'] = 2
                     else:
                         os.remove(filename)

@@ -43,10 +43,30 @@ def default_args(ap):
     return ap
 
 
+def handle_grouped_adds_and_deletes(solr_update_url, result_output):
+    """
+    Takes extract results, groups them by function, and pushes them to their respective page_solr
+    :param solr_update_url: The solr endpoint URL
+    :type solr_update_url: str
+    :param result_output: a list of dicts with add and delete directives
+    :type result_output: list
+    :return: whether add and delete worked
+    :rtype: bool
+    """
+    result_output = filter(lambda x: x, result_output)  # remove nones
+    adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
+    deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
+    psa_result = page_solr_add(solr_update_url, adds)
+    psd_result = page_solr_delete(solr_update_url, deletes)
+    return psa_result and psd_result
+
+
 def page_solr_extract_transform(namespace):
     """ Extracts data from the appropriate IndexService, pushes it to Solr.
     :param namespace: A namespace instance from argparse with host and ids pushed into it
     :type namespace:class:`argparse.namespace`
+    :return: add and delete dict
+    :rtype: dict
     """
     if not namespace.ids or not namespace.host:
         get_logger().error(u"page_solr_etl invoked with ids or host missing", extra=vars(namespace))
