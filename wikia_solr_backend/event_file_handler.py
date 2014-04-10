@@ -25,6 +25,37 @@ def get_args():
     return ap.parse_args()
 
 
+def grouped_events_from_file(namespace):
+    """
+    Extracts events from file and groups by host
+    :param namespace: an argparse namespace
+    :type namespace:class:`argparse.Namespace`
+    :return: a grouped dict keying hosts to ids
+    :rtype: defaultdict
+    """
+    host_hash = defaultdict(list)
+    with open(namespace.filename, u'r') as fl:
+        try:
+            events = json.loads(u"[%s]" % u",".join(fl.readlines()))
+            for event in events:
+                host_hash[event[u"serverName"]].append(event[u"pageId"])
+        except ValueError:
+            get_logger().warn(u"Could not decode entire file: %s" % namespace.filename)
+            for line_number, line in enumerate(fl):
+                try:
+                    event = json.loads(line)
+                    if u"pageId" not in event or u"serverName" not in event:
+                        get_logger().info(u"Event in line number %d of %s is malformed: %s"
+                                          % (line_number, namespace.filename, line))
+                        continue
+                    host_hash[event[u"serverName"]].append(event[u"pageId"])
+                except ValueError:
+                    get_logger().warn(u"Could not decode event in line number %d of %s"
+                                      % (line_number, namespace.filename),
+                                      extras={u'data': line})
+    return host_hash
+
+
 def attach_to_file(namespace):
     """
      Reads events from a file
@@ -39,19 +70,8 @@ def attach_to_file(namespace):
 
     start_time = time.time()
 
-    host_hash = defaultdict(list)
-    with open(namespace.filename, u'r') as fl:
-        for line_number, line in enumerate(fl):
-            try:
-                event = json.loads(line)
-                if u"pageId" not in event or u"serverName" not in event:
-                    get_logger().info(u"Event in line number %d of %s is malformed: %s"
-                                      % (line_number, namespace.filename, line))
-                    continue
-                host_hash[event[u"serverName"]].append(event[u"pageId"])
-            except ValueError:
-                get_logger().warn(u"Could not decode event in line number %d of %s" % (line_number, namespace.filename),
-                                  extras={u'data': line})
+    host_hash = grouped_events_from_file(namespace)
+    line_count = sum([len(v) for v in host_hash.values()])
 
     if not host_hash:
         get_logger().error(u"No events found in %s" % namespace.filename)
@@ -62,7 +82,7 @@ def attach_to_file(namespace):
                                 for i in range(0, len(host_hash[host]), 15)]
     try:
         async_result = pool.map_async(page_solr_extract_transform, events_by_host_and_slice)
-        return {u'result': async_result, u'start_time': start_time, u'lines': line_number, u'step': 1}
+        return {u'result': async_result, u'start_time': start_time, u'lines': line_count, u'step': 1}
     except Exception as e:
         get_logger().error(e)
         return None
