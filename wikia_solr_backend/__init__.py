@@ -7,6 +7,7 @@ import logging
 import wikiautils.logger as wl
 import json
 import datetime
+import traceback
 
 logger = None
 log_level = logging.INFO
@@ -54,13 +55,17 @@ def handle_grouped_adds_and_deletes(solr_update_url, result_output):
     :return: whether add and delete worked
     :rtype: bool
     """
-    result_output = filter(lambda x: x, result_output)  # remove nones
-    adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
-    deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
-    get_logger().info(u"Sending %d adds and %d deletes" % (len(adds), len(deletes)))
-    psa_result = page_solr_add(solr_update_url, adds)
-    psd_result = page_solr_delete(solr_update_url, deletes)
-    return psa_result and psd_result
+    try:
+        result_output = filter(lambda x: x, result_output)  # remove nones
+        adds = [doc for grouping in result_output for doc in grouping.get(u'adds', [])]
+        deletes = [doc for grouping in result_output for doc in grouping.get(u'deletes', [])]
+        get_logger().info(u"Sending %d adds and %d deletes" % (len(adds), len(deletes)))
+        psa_result = page_solr_add(solr_update_url, adds)
+        psd_result = page_solr_delete(solr_update_url, deletes)
+        return psa_result and psd_result
+    except Exception as e:
+        print e
+        print traceback.format_exc()
 
 
 def page_solr_extract_transform(namespace):

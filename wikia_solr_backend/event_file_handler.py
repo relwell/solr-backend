@@ -97,6 +97,8 @@ def attach_to_file(namespace):
 def monitor_async_files(solr_update_url, async_files):
     """
     Pushes async result instances in a defaultdict through ETL process
+    :param solr_update_url: the URL we're using to make updates to Solr
+    :type solr_update_url: str
     :param async_files: default dict keying file names to dictionaries holding data about an async result
     :type async_files: defaultdict
     :return: the async_files dict with any finished items removed
