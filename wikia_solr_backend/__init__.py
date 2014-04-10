@@ -101,7 +101,7 @@ def page_solr_add(solr_update_url, dataset):
     """
     for data in [dataset[i:i+1] for i in range(0, len(dataset), 1)]:
         try:
-            print json_dumps(data)
+            print json.dumps(data)
             solr_response = requests.post(solr_update_url, data=json.dumps(data),
                                           headers={u'Content-type': u'application/json'})
             return
